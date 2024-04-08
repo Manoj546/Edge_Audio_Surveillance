@@ -1,0 +1,74 @@
+/* App.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap');
+
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #ffffff;
+    background-image: linear-gradient(54deg, #ffffff 0%, #08AEEA 36%, #2AF598 100%);
+    
+    font-family: "Oswald", sans-serif;
+    font-optical-sizing: auto;
+
+  }
+  
+  
+  .root {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .Headings {
+    margin: 40px 0px 0px 0px;
+    width: 70vh;
+    display: flex;
+    flex-direction: column;
+    /* justify-content: flex-start; */
+    align-items: center;
+    align-self: center;
+    font-weight: 700;
+    font-size: 3vh;
+    /* position:calc(20px, 0); */
+  }
+  
+  .Headings h1 {
+    width: 100%;
+    display: flex;
+    color: rgb(0, 0, 0);
+    margin: none;
+  }
+  
+  .Headings h3 {
+    width: 100%;
+    font-weight: 700;
+    margin: none;
+    display: flex;
+    color: rgb(114, 16, 16);
+  }
+  
+  .Result {
+    width: 100%;
+    padding-top: 100px;
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+    align-self: center;
+  }
+  
+  .Model1,
+  .Model2 {
+    background-color: rgba(245, 222, 179, 0.497);
+    width: 400px;
+    height: 200px;
+    border-radius: 10px;
+    padding: 20px 40px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  }
+  

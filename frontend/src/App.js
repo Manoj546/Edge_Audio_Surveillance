@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
+import './Style.css'
 
 const socket = io("http://localhost:5000"); // Assuming Flask server is running on localhost:5000
 
@@ -15,14 +16,18 @@ function App() {
     if (data != "") setResultFunction(data.text);
   });
 
-  useEffect(()=>{
-
-  }, [result])
+  useEffect(() => {}, [result]);
 
   return (
-    <div>
-      <h1>Result:</h1>
-      <p>{result}</p>
+    <div className="root">
+      <div className="Headings">
+        <h1>Edge Audio Simulation:</h1>
+        <h3>Multilingual Verbal and Non Verbal Speech Detection</h3>
+      </div>
+      <div className="Result">
+        <div className="Model1">{result}</div>
+        <div className="Model2">{result}</div>
+      </div>
     </div>
   );
 }
