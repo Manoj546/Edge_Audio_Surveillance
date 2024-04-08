@@ -2,7 +2,7 @@ Follow these steps to run the code:
 
 Compatible python version: 3.7V
 
-virtual venv
+virtualenv venv
 
 ./venv/Scripts/activate.ps1
 
