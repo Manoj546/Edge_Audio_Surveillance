@@ -1,20 +1,20 @@
 # Miscellaneous
-./scream_wakeword/*.class
-./scream_wakeword/*.log
-./scream_wakeword/*.pyc
-./scream_wakeword/*.swp
-./scream_wakeword/.DS_Store
-./scream_wakeword/.atom/
-./scream_wakeword/.buildlog/
-./scream_wakeword/.history
-./scream_wakeword/.svn/
-./scream_wakeword/migrate_working_dir/
+./recorder_frontend/*.class
+./recorder_frontend/*.log
+./recorder_frontend/*.pyc
+./recorder_frontend/*.swp
+./recorder_frontend/.DS_Store
+./recorder_frontend/.atom/
+./recorder_frontend/.buildlog/
+./recorder_frontend/.history
+./recorder_frontend/.svn/
+./recorder_frontend/migrate_working_dir/
 
 # IntelliJ related
-./scream_wakeword/*.iml
-./scream_wakeword/*.ipr
-./scream_wakeword/*.iws
-./scream_wakeword/.idea/
+./recorder_frontend/*.iml
+./recorder_frontend/*.ipr
+./recorder_frontend/*.iws
+./recorder_frontend/.idea/
 
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
@@ -22,25 +22,25 @@
 #.vscode/
 
 # Flutter/Dart/Pub related
-./scream_wakeword/**/doc/api/
-./scream_wakeword/**/ios/Flutter/.last_build_id
-./scream_wakeword/.dart_tool/
-./scream_wakeword/.flutter-plugins
-./scream_wakeword/.flutter-plugins-dependencies
-./scream_wakeword/.pub-cache/
-./scream_wakeword/.pub/
-./scream_wakeword/build/
+./recorder_frontend/**/doc/api/
+./recorder_frontend/**/ios/Flutter/.last_build_id
+./recorder_frontend/.dart_tool/
+./recorder_frontend/.flutter-plugins
+./recorder_frontend/.flutter-plugins-dependencies
+./recorder_frontend/.pub-cache/
+./recorder_frontend/.pub/
+./recorder_frontend/build/
 
 # Symbolication related
-./scream_wakeword/app.*.symbols
+./recorder_frontend/app.*.symbols
 
 # Obfuscation related
-./scream_wakeword/app.*.map.json
+./recorder_frontend/app.*.map.json
 
 # Android Studio will place build artifacts here
-./scream_wakeword/android/app/debug
-./scream_wakeword/android/app/profile
-./scream_wakeword/android/app/release
+./recorder_frontend/android/app/debug
+./recorder_frontend/android/app/profile
+./recorder_frontend/android/app/release
 
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
