@@ -25,9 +25,7 @@ sio = socketio.Server(cors_allowed_origins='*')
 app.wsgi_app = socketio.WSGIApp(sio, app.wsgi_app)
 
 
-
 #Scream detaction functions
-
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(device)
 
@@ -56,13 +54,13 @@ def transform_data_to_image(audio, sample_rate):
 
     plt.imsave(image_path, spectrogram_tensor.log2().numpy(), cmap='viridis')
     return image_path
+    
+model = torch.load("./models/Resnet34_Model.pt", map_location=torch.device('cuda'))
 
-
-def scream_detection_ml():
-
-    model = torch.load("Resnet34_Model.pt", map_location=torch.device('cuda'))
+def scream_detection_ml(final_path):
+    pred = "Scream Not Detected"
     model.eval()
-    audio, sample_rate = torchaudio.load("scream_help.wav")
+    audio, sample_rate = torchaudio.load(final_path)
     image_path = transform_data_to_image(audio, sample_rate)
     image = Image.open(image_path)
     image = transform(image).unsqueeze(0)  
@@ -77,9 +75,12 @@ def scream_detection_ml():
     if predict == 0:
         print("No Scream is detected")
     else:
+        pred = "Scream Detected"
         print("Scream is detected")
+        
+    return pred
 
-    print(f"This is total time {end1-start1}")
+    # print(f"This is total time {end1-start1}")
     
 #End of scream detection code
 
@@ -101,23 +102,22 @@ def resample_audio(audio_data, new_rate=16000):
     resampled_data = resample(audio_data, int(len(audio_data) * float(new_rate) / original_rate))
     return resampled_data.astype(np.int16)
 
-wav_file_path = "104.wav"
+def key_word_function(final_path):
 
-wav_file = wave.open(wav_file_path, 'rb')
+    wav_file = wave.open(final_path, 'rb')
 
-# Generate output string header
-print("\n\n")
-print("#" * 100)
-print(f"Listening for wakewords in {wav_file_path}...")
-print("#" * 100)
-print("\n" * (n_models * 3))
+    # Generate output string header
+    print("\n\n")
+    print("#" * 100)
+    print(f"Listening for wakewords in {final_path}...")
+    print("#" * 100)
+    print("\n" * (n_models * 3))
 
-# Read and process audio data from the WAV file
-CHUNK = 1028
-audio_data = wav_file.readframes(CHUNK)
+    # Read and process audio data from the WAV file
+    CHUNK = 1028
+    audio_data = wav_file.readframes(CHUNK)
+    pred = "Help Not Detected"
 
-
-def predict_function(audio_data):
     while audio_data:
         audio_array = np.frombuffer(audio_data, dtype=np.int16)
 
@@ -133,11 +133,12 @@ def predict_function(audio_data):
         # Check if any score is above 0.05
         if any(score >= 0.3 for score in prediction.values()):
             print("Help Detected")
+            pred = "Help Detected"
             # score_above_threshold_counter += 1
             break
 
         # Print results for each chunk
-        print(f"Prediction for chunk: {prediction}")
+        # print(f"Prediction for chunk: {prediction}")
 
         # Read next chunk of audio data
         audio_data = wav_file.readframes(CHUNK)
@@ -146,8 +147,7 @@ def predict_function(audio_data):
 
     # Close the WAV file
     wav_file.close()
-    return prediction
-
+    return pred
 
 #End of openwakeword
 
@@ -158,12 +158,15 @@ def predict_function(audio_data):
 def process_data():
     if 'text' not in request.form or 'audio' not in request.files:
         return 'Missing text or audio data', 400
+
     text = request.form['text']
     audio_file = request.files['audio']
+    final_path = 'static/' + audio_file.filename
     print("Received data:", text, audio_file.filename)  # Add this line
-    audio_file.save('static/' + audio_file.filename)
+
+    audio_file.save(final_path)
     
-    result = {'text': text, 'audio_file': audio_file.filename, 'scream': scream_detection_ml(), 'key_word': predict_function()}
+    result = {'text': text, 'audio_file': audio_file.filename, 'scream': scream_detection_ml(final_path), 'key_word': key_word_function(final_path)}
     sio.emit('result', result)
     print("Emitted result:", result)  # Add this line
     return jsonify({'result': result})
