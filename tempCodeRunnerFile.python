@@ -1,0 +1,10 @@
+import requests
+
+url = 'http://192.168.142.147:5000/data' # Replace with the URL of the receiver
+with open("/home/lenovo/Desktop/Edge_Audio_Surveillance/backend/4_emotion.wav", 'rb') as file:
+    files = {'messageFile': file}
+    # data = {'name': 'myname'} # Optional additional data
+    response = requests.post(url, files=files)
+
+print(response.status_code)
+print(response.text)

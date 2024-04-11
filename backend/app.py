@@ -55,9 +55,10 @@ def transform_data_to_image(audio, sample_rate):
     plt.imsave(image_path, spectrogram_tensor.log2().numpy(), cmap='viridis')
     return image_path
     
-model = torch.load("./models/Resnet34_Model.pt", map_location=torch.device('cuda'))
+model = torch.load("./models/Resnet34_Model.pt", map_location=torch.device('cpu'))
 
 def scream_detection_ml(final_path):
+    print("Inside scream")
     pred = "Scream Not Detected"
     model.eval()
     audio, sample_rate = torchaudio.load(final_path)
@@ -97,14 +98,16 @@ owwModel = Model(wakeword_models=['./models/Help_me.tflite', './models/Help_us.t
                                   './models/please_help.tflite', './models/Someone_Help.tflite'], inference_framework='tflite')
 n_models = len(owwModel.models.keys())
 
-def resample_audio(audio_data, new_rate=16000):
-    original_rate = wav_file.getframerate()
-    resampled_data = resample(audio_data, int(len(audio_data) * float(new_rate) / original_rate))
-    return resampled_data.astype(np.int16)
+
 
 def key_word_function(final_path):
 
     wav_file = wave.open(final_path, 'rb')
+    
+    def resample_audio(audio_data, new_rate=16000):
+        original_rate = wav_file.getframerate()
+        resampled_data = resample(audio_data, int(len(audio_data) * float(new_rate) / original_rate))
+        return resampled_data.astype(np.int16)
 
     # Generate output string header
     print("\n\n")
@@ -153,20 +156,19 @@ def key_word_function(final_path):
 
 
 # Define a route to handle POST requests
-@app.route('/data', methods=['POST'])
 @app.route('/process_data', methods=['POST'])
+@app.route('/data', methods=['POST'])
 def process_data():
-    if 'text' not in request.form or 'audio' not in request.files:
-        return 'Missing text or audio data', 400
+    print(request.files['messageFile'])
 
-    text = request.form['text']
-    audio_file = request.files['audio']
-    final_path = 'static/' + audio_file.filename
-    print("Received data:", text, audio_file.filename)  # Add this line
+    audio_file = request.files['messageFile']
+    
+    # Save the audio file
+    final_path = "./static/received_audio.wav"
 
     audio_file.save(final_path)
-    
-    result = {'text': text, 'audio_file': audio_file.filename, 'scream': scream_detection_ml(final_path), 'key_word': key_word_function(final_path)}
+    print("Saved")
+    result = {'text': audio_file.filename, 'scream': scream_detection_ml(final_path), 'key_word': key_word_function(final_path)}
     sio.emit('result', result)
     print("Emitted result:", result)  # Add this line
     return jsonify({'result': result})
