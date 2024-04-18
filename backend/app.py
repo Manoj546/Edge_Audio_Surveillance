@@ -72,6 +72,9 @@ def scream_detection_ml(final_path):
         end1 = time.time()
 
     predict = outputs.argmax(dim=1).cpu().detach().numpy().ravel()[0]
+    print(outputs.cpu().numpy())
+    
+    scream_predict = outputs[0][1].cpu().numpy()
 
     if predict == 0:
         print("No Scream is detected")
@@ -79,7 +82,7 @@ def scream_detection_ml(final_path):
         pred = "Scream Detected"
         print("Scream is detected")
         
-    return pred
+    return predict, scream_predict
 
     # print(f"This is total time {end1-start1}")
     
@@ -101,23 +104,22 @@ n_models = len(owwModel.models.keys())
 
 
 def key_word_function(final_path):
+    
+    count = 0
+    keyflag = False
 
     wav_file = wave.open(final_path, 'rb')
+
     
     def resample_audio(audio_data, new_rate=16000):
         original_rate = wav_file.getframerate()
         resampled_data = resample(audio_data, int(len(audio_data) * float(new_rate) / original_rate))
         return resampled_data.astype(np.int16)
 
-    # Generate output string header
-    print("\n\n")
-    print("#" * 100)
     print(f"Listening for wakewords in {final_path}...")
-    print("#" * 100)
-    print("\n" * (n_models * 3))
 
     # Read and process audio data from the WAV file
-    CHUNK = 1028
+    CHUNK = 1024
     audio_data = wav_file.readframes(CHUNK)
     pred = "Help Not Detected"
 
@@ -134,11 +136,10 @@ def key_word_function(final_path):
         # end1 = time.time()
 
         # Check if any score is above 0.05
-        if any(score >= 0.3 for score in prediction.values()):
-            print("Help Detected")
-            pred = "Help Detected"
+        if any(score >= 0.1 for score in prediction.values()):
+            keyflag = True
+            count += 1
             # score_above_threshold_counter += 1
-            break
 
         # Print results for each chunk
         # print(f"Prediction for chunk: {prediction}")
@@ -150,7 +151,7 @@ def key_word_function(final_path):
 
     # Close the WAV file
     wav_file.close()
-    return pred
+    return keyflag, count
 
 #End of openwakeword
 
@@ -168,7 +169,31 @@ def process_data():
 
     audio_file.save(final_path)
     print("Saved")
-    result = {'text': audio_file.filename, 'scream': scream_detection_ml(final_path), 'key_word': key_word_function(final_path)}
+    
+    keyflag = False
+    scream_predict, scream_val = scream_detection_ml(final_path)
+    keyflag, count = key_word_function(final_path)
+    print(f'This is keyflag: {keyflag}')
+    
+    situation = ''
+
+    if scream_predict == 1 and keyflag == True:
+        situation = "Critical Situation"
+    elif scream_val > 2 and keyflag == False:
+        situation = 'Critical Situation'
+    elif scream_predict == 0 and keyflag == True: ##Emotion
+        situation = "Checking for emotion"
+        ##if that emotion is true: print("Critical Situation")
+        ##else: print("No Crictical Situation")
+    elif count > 1:
+        situation = "Critical Situation"
+    else:
+        situation = "Not a Critical Situation"
+        
+    scream_str = ['Scream Detected' if scream_predict == 1 else 'Scream Not Detected']
+    key_str = ['Help Detected' if keyflag == True else 'Help Not Detected']
+
+    result = {'text': audio_file.filename, 'scream': scream_str[0], 'key_word': key_str[0], 'situation': situation}
     sio.emit('result', result)
     print("Emitted result:", result)  # Add this line
     return jsonify({'result': result})
