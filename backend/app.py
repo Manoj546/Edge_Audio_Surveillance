@@ -1,21 +1,17 @@
 from flask import Flask, request, jsonify
 import socketio
 
-import pandas as pd
 import torch
 from PIL import Image
 import torchaudio
 from torchvision import transforms
 import matplotlib.pyplot as plt
 import time
-
-import os
-import wave
 import numpy as np
-import openwakeword
-from openwakeword.model import Model
 from scipy.signal import resample
 import time 
+import whisper
+from transformers import pipeline
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -89,69 +85,126 @@ def scream_detection_ml(final_path):
 #End of scream detection code
 
 
-#Start of openwake word
+#Start of whisper model
+key_model = whisper.load_model("base")
+key_model = key_model.to(device)
 
-# Load pre-trained openwakeword model
-openwakeword.utils.download_models()
+def key_word_function(file_path):
 
-# Initialize openWakeWord model
-owwModel = Model(wakeword_models=['./models/Help_me.tflite', './models/Help_us.tflite', 
-                                  './models/please_help_me.tflite', './models/Sombody_Help.tflite',
-                                  './models/Someone_Help_me.tflite', 'models/help.tflite',
-                                  './models/please_help.tflite', './models/Someone_Help.tflite'], inference_framework='tflite')
-n_models = len(owwModel.models.keys())
-
-
-
-def key_word_function(final_path):
-    
-    count = 0
+    emotionflag = False
     keyflag = False
 
-    wav_file = wave.open(final_path, 'rb')
+    # print("Whisper Model Loaded!")
+    sentiment_analysis = pipeline("sentiment-analysis", framework="pt", model="SamLowe/roberta-base-go_emotions")
+
+    def analyze_sentiment(text):
+        results = sentiment_analysis(text)
+        sentiment_results = {result['label']: result['score'] for result in results}
+        return sentiment_results
+    
+
+    # Function to display sentiment results
+    def display_sentiment_results(sentiment_results, option):
+        sentiment_text = ""
+        for sentiment, score in sentiment_results.items():
+            if option == "Sentiment":
+                sentiment_text += f"{sentiment}\n"
+        # print(f"This is sentiment text {sentiment_text}")
+        return sentiment_text
+
+    # Function to perform inference
+    def inference(ans, sentiment_option):
+        sentiment_results = analyze_sentiment(ans)
+        sentiment_output = display_sentiment_results(sentiment_results, sentiment_option)
+        return sentiment_output
+
+
+    # Transcribe audio and perform sentiment analysis
+    # print(f"Transcribing Audio: {filename}")
+    start = time.time()
+    result = key_model.transcribe(file_path)
+    end = time.time()
+    ans = result["text"]
+    print(f"This is the text transcribed {ans}")
+    # print(result['segments'])
+    count = 0
+    # print(ans)
+    print(f"Keyword total time {end-start}")
+
+    # Check if "help" is present in the text
+    # if count_help_occurrences(ans) > 0:
+    #     help_count += 1
+
+    if ans.lower().count("help") >= 1:
+        keyflag = True
+    if ans.lower().count("help") >= 2:
+        print("Help count is > 2")
+        emotionflag = True
+        count = ans.lower().count("help")
+
+    sentiment_option = "Sentiment"
+    sentiment_output_value = inference(ans, sentiment_option)
+    print(f"This is the sentiment {sentiment_output_value}")
+
+    if sentiment_output_value in ['sadness', 'anger', 'fear']:
+        emotionflag = True
 
     
-    def resample_audio(audio_data, new_rate=16000):
-        original_rate = wav_file.getframerate()
-        resampled_data = resample(audio_data, int(len(audio_data) * float(new_rate) / original_rate))
-        return resampled_data.astype(np.int16)
+    # print(sentiment_output_value)
+    return emotionflag, keyflag
 
-    print(f"Listening for wakewords in {final_path}...")
 
-    # Read and process audio data from the WAV file
-    CHUNK = 1024
-    audio_data = wav_file.readframes(CHUNK)
-    pred = "Help Not Detected"
 
-    while audio_data:
-        audio_array = np.frombuffer(audio_data, dtype=np.int16)
 
-        # Resample audio if needed
-        if wav_file.getframerate() != 16000:
-            audio_array = resample_audio(audio_array)
+# def key_word_function(final_path):
+    
+#     count = 0
+#     keyflag = False
 
-        # Feed audio to openWakeWord model
-        # start1 = time.time()
-        prediction = owwModel.predict(audio_array)
-        # end1 = time.time()
+#     wav_file = wave.open(final_path, 'rb')
 
-        # Check if any score is above 0.05
-        if any(score >= 0.1 for score in prediction.values()):
-            keyflag = True
-            count += 1
-            # score_above_threshold_counter += 1
+    
+#     def resample_audio(audio_data, new_rate=16000):
+#         original_rate = wav_file.getframerate()
+#         resampled_data = resample(audio_data, int(len(audio_data) * float(new_rate) / original_rate))
+#         return resampled_data.astype(np.int16)
 
-        # Print results for each chunk
-        # print(f"Prediction for chunk: {prediction}")
+#     print(f"Listening for wakewords in {final_path}...")
 
-        # Read next chunk of audio data
-        audio_data = wav_file.readframes(CHUNK)
-        # totaltime += (end1-start1)
-        # print(f"Inference Time {end1-start1}")
+#     # Read and process audio data from the WAV file
+#     CHUNK = 1024
+#     audio_data = wav_file.readframes(CHUNK)
+#     pred = "Help Not Detected"
 
-    # Close the WAV file
-    wav_file.close()
-    return keyflag, count
+#     while audio_data:
+#         audio_array = np.frombuffer(audio_data, dtype=np.int16)
+
+#         # Resample audio if needed
+#         if wav_file.getframerate() != 16000:
+#             audio_array = resample_audio(audio_array)
+
+#         # Feed audio to openWakeWord model
+#         # start1 = time.time()
+#         prediction = owwModel.predict(audio_array)
+#         # end1 = time.time()
+
+#         # Check if any score is above 0.05
+#         if any(score >= 0.1 for score in prediction.values()):
+#             keyflag = True
+#             count += 1
+#             # score_above_threshold_counter += 1
+
+#         # Print results for each chunk
+#         # print(f"Prediction for chunk: {prediction}")
+
+#         # Read next chunk of audio data
+#         audio_data = wav_file.readframes(CHUNK)
+#         # totaltime += (end1-start1)
+#         # print(f"Inference Time {end1-start1}")
+
+#     # Close the WAV file
+#     wav_file.close()
+#     return keyflag, count
 
 #End of openwakeword
 
@@ -172,7 +225,7 @@ def process_data():
     
     keyflag = False
     scream_predict, scream_val = scream_detection_ml(final_path)
-    keyflag, count = key_word_function(final_path)
+    emotionflag, keyflag = key_word_function(final_path)
     print(f'This is keyflag: {keyflag}')
     
     situation = ''
@@ -180,15 +233,17 @@ def process_data():
     if scream_predict == 1 and keyflag == True:
         situation = "Critical Situation"
     elif scream_val > 2 and keyflag == False:
-        situation = 'Critical Situation'
+        situation = "Critical Situation"
     elif scream_predict == 0 and keyflag == True: ##Emotion
-        situation = "Checking for emotion"
+        print("Checking for emotion")
+        if emotionflag == True:
+            situation = "Critical Situation"
+        else:
+            situation = "Not a critical situation"
         ##if that emotion is true: print("Critical Situation")
         ##else: print("No Crictical Situation")
-    elif count > 1:
-        situation = "Critical Situation"
     else:
-        situation = "Not a Critical Situation"
+        situation = "Not a critical situation"
         
     scream_str = ['Scream Detected' if scream_predict == 1 else 'Scream Not Detected']
     key_str = ['Help Detected' if keyflag == True else 'Help Not Detected']
