@@ -1,3 +1,5 @@
+import time
+start_time = time.time()
 from flask import Flask, request, jsonify
 import socketio
 
@@ -209,17 +211,14 @@ def key_word_function(file_path):
 #End of openwakeword
 
 
-# Define a route to handle POST requests
+
 @app.route('/process_data', methods=['POST'])
 @app.route('/data', methods=['POST'])
 def process_data():
-    print(request.files['messageFile'])
 
     audio_file = request.files['messageFile']
     
-    # Save the audio file
     final_path = "./static/received_audio.wav"
-
     audio_file.save(final_path)
     print("Saved")
     
@@ -250,10 +249,93 @@ def process_data():
 
     result = {'text': audio_file.filename, 'scream': scream_str[0], 'key_word': key_str[0], 'situation': situation}
     sio.emit('result', result)
-    print("Emitted result:", result)  # Add this line
+    print("Emitted result:", result) 
     return jsonify({'result': result})
 
 
+# ***********************************************************************************************
+# only scream mapping
+@app.route('/process_data1', methods=['POST'])
+@app.route('/data1', methods=['POST'])
+def process_data1():
+    print(request.files['messageFile'])
+
+    audio_file = request.files['messageFile']
+    
+    # Save the audio file
+    final_path = "./static/received_audio.wav"
+
+    audio_file.save(final_path)
+    print("Saved")
+    
+    keyflag = False
+    scream_predict, scream_val = scream_detection_ml(final_path)
+    
+    situation = ''
+
+    if scream_predict == 1:
+        situation = "Critical Situation"
+    elif scream_val > 2:
+        situation = "Critical Situation"
+    elif scream_predict == 0: ##Emotion
+        print("Checking for emotion")
+        ##if that emotion is true: print("Critical Situation")
+        ##else: print("No Crictical Situation")
+    else:
+        situation = "Not a critical situation"
+        
+    scream_str = ['Scream Detected' if scream_predict == 1 else 'Scream Not Detected']
+
+    result = {'text': audio_file.filename, 'scream': scream_str[0], 'situation': situation}
+    sio.emit('result', result)
+    print("Emitted result:", result)
+    return jsonify({'result': result})
+
+
+# ***********************************************************************************************
+# Only key words mapping
+
+@app.route('/process_data2', methods=['POST'])
+@app.route('/data2', methods=['POST'])
+def process_data2():
+    print(request.files['messageFile'])
+
+    audio_file = request.files['messageFile']
+    
+    # Save the audio file
+    final_path = "./static/received_audio.wav"
+
+    audio_file.save(final_path)
+    print("Saved")
+    
+    keyflag = False
+    emotionflag, keyflag = key_word_function(final_path)
+    print(f'This is keyflag: {keyflag}')
+    
+    situation = ''
+
+    if keyflag == True:
+        situation = "Critical Situation"
+
+    elif emotionflag == True:
+            situation = "Critical Situation"
+
+        ##if that emotion is true: print("Critical Situation")
+        ##else: print("No Crictical Situation")
+    else:
+        situation = "Not a critical situation"
+        
+    key_str = ['Help Detected' if keyflag == True else 'Help Not Detected']
+
+    result = {'text': audio_file.filename,  'key_word': key_str[0], 'situation': situation}
+    sio.emit('result', result)
+    print("Emitted result:", result) 
+    return jsonify({'result': result})
+    
+
+end_time = time.time()
+print(f"Total time taken: {end_time - start_time} seconds")
+
 if __name__ == '__main__':
     # Run the Flask app
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0', threaded=True)
